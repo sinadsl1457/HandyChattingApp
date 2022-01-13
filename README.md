@@ -10,7 +10,7 @@ HandyChattingApp
 ![5](https://user-images.githubusercontent.com/70827896/149076933-55659f82-c6a1-4b3d-bf4d-58830a51ee87.gif)
 
 
-Reference to Raywenderlich RealTimeChat, FireStore Document, Kakao Document, Facebook Document
+Reference to Raywenderlich RealTimeChat, firebase document, FireStore Document, Kakao Document, Facebook Document, Hacking with Swift, etc...
 
 installed Independency: 
 pod 'Firebase/Firestore'
