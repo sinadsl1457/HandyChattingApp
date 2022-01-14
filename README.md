@@ -11,6 +11,12 @@ Basically can chat with other users and realtime store user profile.
 
 
 
+
+
+
+
+
+
 // I modified it to show the new updated user picture.
 
 
