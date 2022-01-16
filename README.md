@@ -34,7 +34,7 @@ introduced this app function:
 ![6](https://user-images.githubusercontent.com/70827896/149559311-0db490ae-095c-4565-9791-3ac609808aa5.gif)
 
 
-Reference to Raywenderlich RealTimeChat, Raywenderlich FireStore Book and videos, firebase document, FireStore Document, Kakao Document, Facebook Document, Hacking with Swift, etc...
+Reference to Raywenderlich RealTimeChat, Raywenderlich FireStore Book and videos, firebase document, FireStore Document, Kakao Document, Facebook Document, Hacking with Swift, Messagekit doument etc...
 
 installed Independency: 
 pod 'Firebase/Firestore'
