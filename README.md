@@ -3,6 +3,17 @@ HandyChattingApp
 Basically can chat with other users and realtime store user profile. 
 
 
+introduced this app function: 
+- user can choose four option login system, i was implemented access to frebase authentication.
+- once sinn-in every usersInfo be store in firbasefirestore and each emails using identification.
+- this app support Only two people can chat. in other words it's can be private. other user can't see chat list.
+- support share image and video each other in chat.
+- you can anytime change your profile image and nickname. it's store to frestore meaning that permanent.
+- can seaching that All the users who are registered to our app...
+- it's not some perfectly app, i made this for just portfolio !!
+ 
+
+
 ![1](https://user-images.githubusercontent.com/70827896/149076687-ce5bac53-a717-4ba8-9e89-70f8b0f831dc.gif) ![2](https://user-images.githubusercontent.com/70827896/149076695-6e339a9f-2d1e-45c3-91f9-01461b095cb4.gif)
 
 ![3](https://user-images.githubusercontent.com/70827896/149076885-d826c209-a945-4639-8e63-3c102716af18.gif) ![4](https://user-images.githubusercontent.com/70827896/149076901-3e689420-f195-4adb-ab17-363ed7f79d52.gif)
