@@ -21,7 +21,6 @@ class DataManager {
     var chatsReference: CollectionReference {
         return database.collection("chats")
     }
-    
 }
 
 
@@ -32,16 +31,29 @@ extension DataManager {
                 completion(false)
                 return
             }
-            
             completion(true)
         }
     }
     
    public func createNewUserDocument(name: String, email: String, photoUrl: String? = nil) {
         guard let urlStr = photoUrl else { return }
-        
         let user = Users(name: name, email: email, photoUrl: urlStr)
-        
         usersReference.document(email).setData(user.rep)
+    }
+
+    public func getUserInfo(email: String, completion: @escaping (Users?) -> Void) {
+        usersReference.document(email).getDocument { snapshot, error in
+            guard let data = snapshot?.data(),
+                  let name = data["name"] as? String,
+                  let photoUrl = data["photoUrl"] as? String,
+                  let email = data["email"] as? String else {
+                print(error?.localizedDescription ?? "")
+                completion(nil)
+                return
+            }
+        
+            let users = Users(name: name, email: email, photoUrl: photoUrl)
+            completion(users)
+        }
     }
 }

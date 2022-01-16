@@ -43,6 +43,7 @@ extension StorageManager {
 #endif
             
             imageReference.downloadURL { url, _ in
+                print("download Url")
                 completion(url)
             }
         }

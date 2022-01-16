@@ -12,6 +12,7 @@ import InputBarAccessoryView
 import FirebaseFirestore
 import Photos
 import PhotosUI
+import SDWebImage
 
 class ChattingViewController: MessagesViewController {
     private var isSendingPhoto = false {
@@ -23,12 +24,27 @@ class ChattingViewController: MessagesViewController {
         }
     }
     private let storage = Storage.storage().reference()
-    private let user: User
-    private let channel: Users
+    private let currentUser: User
+    private var channel: Users
     private var messages: [Message] = []
     private var messageListener: ListenerRegistration?
     private let database = Firestore.firestore()
-    private var reference: CollectionReference?
+    private var outcomingReference: CollectionReference {
+        return database.collection("users/\(path)/thread/\(channel.email)/thread")
+    }
+    private var incomingReference: CollectionReference {
+        return database.collection("users/\(channel.email)/thread/\(path)/thread")
+    }
+    private var path: String {
+        var path = ""
+        currentUser.providerData.forEach {
+            if let providerEmail = $0.email {
+                path = currentUser.email ?? providerEmail
+            }
+        }
+        return path
+    }
+    
     private var uiPicker = UIImagePickerController()
     
     var picker: PHPickerViewController = {
@@ -40,7 +56,7 @@ class ChattingViewController: MessagesViewController {
     
     
     init(user: User, channel: Users) {
-        self.user = user
+        self.currentUser = user
         self.channel = channel
         super.init(nibName: nil, bundle: nil)
         title = "\(channel.name) 과 대화"
@@ -59,15 +75,30 @@ class ChattingViewController: MessagesViewController {
         navigationItem.largeTitleDisplayMode = .never
         listenToMessages()
         setUpMessageView()
-        removeMessageAvatars()
+        configureMessageAvatars()
         addCameraBarButton()
     }
     
     private func listenToMessages() {
-        let name = channel.name
-        reference = database.collection("chats/\(name)/thread")
-        
-        messageListener = reference?
+        messageListener = outcomingReference
+            .addSnapshotListener { [weak self] querySnapshot, error in
+                guard let self = self else { return }
+                guard let snapshot = querySnapshot else {
+                    print("""
+              Error listening for channel updates: \
+              \(error?.localizedDescription ?? "No error")
+              """)
+                    return
+                }
+                
+                snapshot.documentChanges.forEach { change in
+                    self.handleDocumentChange(change)
+                }
+            }
+    }
+    
+    private func incomingListenToMessages() {
+        messageListener = incomingReference
             .addSnapshotListener { [weak self] querySnapshot, error in
                 guard let self = self else { return }
                 guard let snapshot = querySnapshot else {
@@ -85,7 +116,7 @@ class ChattingViewController: MessagesViewController {
     }
     
     private func save(_ message: Message) {
-        reference?.addDocument(data: message.representation) { [weak self] error in
+        outcomingReference.addDocument(data: message.representation) { [weak self] error in
             guard let self = self else { return }
             if let error = error {
                 print("Error sending message: \(error.localizedDescription)")
@@ -95,6 +126,20 @@ class ChattingViewController: MessagesViewController {
         }
     }
     
+    private func incomingSave(_ message: Message) {
+        incomingReference.addDocument(data: message.representation) { [weak self] error in
+            guard let self = self else { return }
+            if let error = error {
+                print("Error sending message: \(error.localizedDescription)")
+                return
+            }
+            self.messagesCollectionView.scrollToLastItem()
+        }
+    }
+    
+    deinit {
+        messageListener?.remove()
+    }
     
     // MARK: - Actions
     @objc private func addPicturePressed() {
@@ -184,12 +229,40 @@ class ChattingViewController: MessagesViewController {
             guard let url = url else {
                 return
             }
+          
+            DataManager.shared.getUserInfo(email: self.path) { user in
+                if let user = user {
+                    var message = Message(user: self.currentUser, image: image, users: user)
+                    message.downloadURL = url
+                    
+                    self.save(message)
+                    self.messagesCollectionView.scrollToLastItem()
+                }
+            }
+        }
+    }
+    
+    
+    private func incomingSendPhoto(_ image: UIImage) {
+        isSendingPhoto = true
+        
+        uploadImage(image, to: channel) { [weak self] url in
+            guard let self = self else { return }
+            self.isSendingPhoto = false
             
-            var message = Message(user: self.user, image: image)
-            message.downloadURL = url
-            
-            self.save(message)
-            self.messagesCollectionView.scrollToLastItem()
+            guard let url = url else {
+                return
+            }
+          
+            DataManager.shared.getUserInfo(email: self.path) { user in
+                if let user = user {
+                    var message = Message(user: self.currentUser, image: image, users: user)
+                    message.downloadURL = url
+                    
+                    self.incomingSave(message)
+                    self.messagesCollectionView.scrollToLastItem()
+                }
+            }
         }
     }
     
@@ -215,7 +288,6 @@ class ChattingViewController: MessagesViewController {
             } else {
                 insertNewMessage(message)
             }
-            
         default:
             break
         }
@@ -230,37 +302,27 @@ class ChattingViewController: MessagesViewController {
         messagesCollectionView.messagesDataSource = self
         messagesCollectionView.messagesLayoutDelegate = self
         messagesCollectionView.messagesDisplayDelegate = self
-        
     }
     
-    private func removeMessageAvatars() {
-        guard
-            let layout = messagesCollectionView.collectionViewLayout
-                as? MessagesCollectionViewFlowLayout
-        else {
-            return
+    private func configureMessageAvatars() {
+        if let layout = messagesCollectionView.collectionViewLayout as? MessagesCollectionViewFlowLayout {
+            layout.setMessageIncomingAvatarSize(CGSize(width: 55, height: 55))
+            layout.setMessageIncomingMessageTopLabelAlignment(LabelAlignment.init(textAlignment: .left, textInsets: UIEdgeInsets(top: 0, left: 70, bottom: 0, right: 0)))
+          
+            layout.textMessageSizeCalculator.outgoingAvatarSize = .zero
+            layout.setMessageOutgoingAvatarSize(.zero)
+            let outgoingLabelAlignment = LabelAlignment(
+              textAlignment: .right,
+              textInsets: UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 15))
+            layout.setMessageOutgoingMessageTopLabelAlignment(outgoingLabelAlignment)
         }
-        layout.textMessageSizeCalculator.outgoingAvatarSize = .zero
-        layout.textMessageSizeCalculator.incomingAvatarSize = .zero
-        layout.setMessageIncomingAvatarSize(.zero)
-        layout.setMessageOutgoingAvatarSize(.zero)
-        let incomingLabelAlignment = LabelAlignment(
-            textAlignment: .left,
-            textInsets: UIEdgeInsets(top: 0, left: 15, bottom: 0, right: 0))
-        layout.setMessageIncomingMessageTopLabelAlignment(incomingLabelAlignment)
-        let outgoingLabelAlignment = LabelAlignment(
-            textAlignment: .right,
-            textInsets: UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 15))
-        layout.setMessageOutgoingMessageTopLabelAlignment(outgoingLabelAlignment)
     }
     
     private func addCameraBarButton() {
-        // 1
         let cameraItem = InputBarButtonItem(type: .system)
         cameraItem.tintColor = .primary
         cameraItem.image = UIImage(systemName: "camera")
         
-        // 2
         cameraItem.addTarget(
             self,
             action: #selector(addPicturePressed),
@@ -269,14 +331,12 @@ class ChattingViewController: MessagesViewController {
         messageInputBar.leftStackView.alignment = .center
         messageInputBar.setLeftStackViewWidthConstant(to: 50, animated: false)
         
-        // 3
         messageInputBar
             .setStackViewItems([cameraItem], forStack: .left, animated: false)
     }
     
     
     private func downloadImage(at url: URL, completion: @escaping (UIImage?) -> Void) {
-        
         let ref = Storage.storage().reference(forURL: url.absoluteString)
         let megaByte = Int64(1 * 1024 * 1024)
         
@@ -294,7 +354,6 @@ class ChattingViewController: MessagesViewController {
 
 // MARK: - MessagesDisplayDelegate
 extension ChattingViewController: MessagesDisplayDelegate {
-    // 1
     func backgroundColor(
         for message: MessageType,
         at indexPath: IndexPath,
@@ -303,7 +362,7 @@ extension ChattingViewController: MessagesDisplayDelegate {
         return isFromCurrentSender(message: message) ? .primary : .incomingMessage
     }
     
-    // 2
+    
     func shouldDisplayHeader(
         for message: MessageType,
         at indexPath: IndexPath,
@@ -312,17 +371,42 @@ extension ChattingViewController: MessagesDisplayDelegate {
         return false
     }
     
-    // 3
+    
     func configureAvatarView(
         _ avatarView: AvatarView,
         for message: MessageType,
         at indexPath: IndexPath,
         in messagesCollectionView: MessagesCollectionView
     ) {
-        avatarView.isHidden = true
+       
+        outcomingReference.whereField("senderId", isNotEqualTo: currentUser.uid).getDocuments { snapshot, error in
+            guard let documents = snapshot?.documents else { return }
+            documents.forEach { doc in
+                let data = doc.data()
+                guard let senderUrl = data["senderUrl"] as? String else { return }
+                guard let Url = URL(string: senderUrl) else { return }
+            
+                DispatchQueue.main.async {
+                    avatarView.sd_setImage(with: Url, completed: nil)
+                }
+            }
+        }
+        
+        incomingReference.whereField("senderId", isNotEqualTo: currentUser.uid).getDocuments { snapshot, error in
+            guard let documents = snapshot?.documents else { return }
+            documents.forEach { doc in
+                let data = doc.data()
+                guard let senderUrl = data["senderUrl"] as? String else { return }
+                guard let Url = URL(string: senderUrl) else { return }
+            
+                DispatchQueue.main.async {
+                    avatarView.sd_setImage(with: Url, completed: nil)
+                }
+            }
+        }
     }
     
-    // 4
+    
     func messageStyle(
         for message: MessageType,
         at indexPath: IndexPath,
@@ -337,7 +421,6 @@ extension ChattingViewController: MessagesDisplayDelegate {
 
 // MARK: - MessagesLayoutDelegate
 extension ChattingViewController: MessagesLayoutDelegate {
-    // 1
     func footerViewSize(
         for message: MessageType,
         at indexPath: IndexPath,
@@ -346,7 +429,6 @@ extension ChattingViewController: MessagesLayoutDelegate {
         return CGSize(width: 0, height: 8)
     }
     
-    // 2
     func messageTopLabelHeight(
         for message: MessageType,
         at indexPath: IndexPath,
@@ -354,24 +436,28 @@ extension ChattingViewController: MessagesLayoutDelegate {
     ) -> CGFloat {
         return 20
     }
+
 }
 
 
-// MARK: - MessagesDataSource
 extension ChattingViewController: MessagesDataSource {
-    // 1
     func numberOfSections(
         in messagesCollectionView: MessagesCollectionView
     ) -> Int {
         return messages.count
     }
     
-    // 2
     func currentSender() -> SenderType {
-        return Sender(senderId: user.uid, displayName: AppSettings.displayName)
+        var settingName = ""
+        DataManager.shared.getUserInfo(email: path) { user in
+            if let user = user {
+                settingName = user.name
+            }
+        }
+        
+        return Sender(senderId: currentUser.uid, displayName: settingName)
     }
     
-    // 3
     func messageForItem(
         at indexPath: IndexPath,
         in messagesCollectionView: MessagesCollectionView
@@ -379,7 +465,6 @@ extension ChattingViewController: MessagesDataSource {
         return messages[indexPath.section]
     }
     
-    // 4
     func messageTopLabelAttributedText(for message: MessageType, at indexPath: IndexPath) -> NSAttributedString? {
         let name = message.sender.displayName
         return NSAttributedString(
@@ -395,14 +480,14 @@ extension ChattingViewController: MessagesDataSource {
 // MARK: - InputBarAccessoryViewDelegate
 extension ChattingViewController: InputBarAccessoryViewDelegate {
     func inputBar(_ inputBar: InputBarAccessoryView,didPressSendButtonWith text: String) {
-        // 1
-        let message = Message(user: user, content: text)
-        
-        // 2
-        save(message)
-        
-        // 3
-        inputBar.inputTextView.text = ""
+        DataManager.shared.getUserInfo(email: path) { user in
+            if let users = user {
+                let message = Message(user: self.currentUser, users: users, content: text)
+                self.save(message)
+                self.incomingSave(message)
+                inputBar.inputTextView.text = ""
+            }
+        }
     }
 }
 
@@ -425,12 +510,13 @@ extension ChattingViewController: UIImagePickerControllerDelegate, UINavigationC
                    options: nil
             ) { result, _ in
                 guard let image = result else { return }
-                
                 self.sendPhoto(image)
+                self.incomingSendPhoto(image)
             }
             
         } else if let image = info[.originalImage] as? UIImage {
             sendPhoto(image)
+            
         }
     }
     
@@ -451,6 +537,7 @@ extension ChattingViewController: PHPickerViewControllerDelegate {
                 guard let image = image as? UIImage else { return }
                 DispatchQueue.main.async {
                     self.sendPhoto(image)
+                    self.incomingSendPhoto(image)
                 }
             }
         } else {
@@ -458,3 +545,4 @@ extension ChattingViewController: PHPickerViewControllerDelegate {
         }
     }
 }
+ 

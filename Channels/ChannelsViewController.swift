@@ -8,18 +8,30 @@
 import UIKit
 import FirebaseAuth
 import FirebaseFirestore
-import KakaoSDKTalk
 
 class ChannelsViewController: CommonViewController {
     @IBOutlet weak var listTableView: UITableView!
     var channelList: [Users] = []
     var chatListener: ListenerRegistration?
+    private let database = Firestore.firestore()
+    private var path: String {
+        var path = ""
+        if let currentUser = currentUser {
+            currentUser.providerData.forEach {
+                if let providerEmail = $0.email {
+                    path = currentUser.email ?? providerEmail
+                }
+            }
+        }
+        return path
+    }
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
         navigationItem.title = "대화"
-        
-        chatListener = DataManager.shared.chatsReference.addSnapshotListener({ querySnapshot, error in
+        let userRef = self.database.collection("users/\(path)/thread")
+        chatListener = userRef.addSnapshotListener({ querySnapshot, error in
             guard let snapshot = querySnapshot else {
                 self.alert(message: "채널에 업데이트를 실패했습니다 \(error?.localizedDescription ?? "no error")")
                 return
@@ -29,6 +41,7 @@ class ChannelsViewController: CommonViewController {
             }
         })
     }
+    
     
     deinit {
         chatListener?.remove()
@@ -48,6 +61,7 @@ class ChannelsViewController: CommonViewController {
         }
         
         listTableView.insertRows(at: [IndexPath(row: index, section: 0)], with: .automatic)
+        
     }
     
     private func updateChannelInTable(_ channel: Users) {

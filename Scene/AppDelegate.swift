@@ -24,7 +24,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             didFinishLaunchingWithOptions: launchOptions
         )
         
-        KakaoSDKCommon.initSDK(appKey: "e0d187fd22912e1ff02798ee0621db7d")
+        KakaoSDKCommon.initSDK(appKey: kakaoAppKey)
     
         return true
     }

@@ -17,7 +17,7 @@ struct Message: MessageType {
         return id ?? UUID().uuidString
     }
     
-    let content: String
+    let content: String?
     let sentDate: Date
     let sender: SenderType
     var kind: MessageKind {
@@ -25,36 +25,53 @@ struct Message: MessageType {
             let mediaItem = ImageMediaItem(image: image)
             return .photo(mediaItem)
         } else {
-            return .text(content)
+            return .text(content!)
         }
     }
     
     var image: UIImage?
     var downloadURL: URL?
+    let senderUrl: String
     
-    init(user: User, content: String) {
-        sender = Sender(senderId: user.uid, displayName: AppSettings.displayName)
+    init(user: User, users: Users, content: String) {
+        sender = Sender(senderId: user.uid, displayName: users.name)
         self.content = content
         sentDate = Date()
         id = nil
+        senderUrl = users.photoUrl
     }
     
-    init(user: User, image: UIImage) {
-        sender = Sender(senderId: user.uid, displayName: AppSettings.displayName)
+    
+//    init(user: User, content: String) {
+//        sender = Sender(senderId: user.uid, displayName: AppSettings.displayName)
+//        self.content = content
+//        sentDate = Date()
+//        id = nil
+//        senderUrl = ""
+//    }
+//
+    
+    init(user: User, image: UIImage, users: Users) {
+        sender = Sender(senderId: user.uid, displayName: users.name)
         self.image = image
         content = ""
         sentDate = Date()
         id = nil
+        senderUrl = ""
     }
     
     init?(document: QueryDocumentSnapshot) {
         let data = document.data()
         guard let sendDate = data["created"] as? Timestamp,
               let senderId = data["senderId"] as? String,
-              let senderName = data["senderName"] as? String else { return nil }
+              let senderName = data["senderName"] as? String,
+              let senderUrl = data["senderUrl"] as? String
+               else {
+                  return nil
+              }
         
         id = document.documentID
-        
+        self.senderUrl = senderUrl
         self.sentDate = sendDate.dateValue()
         sender = Sender(senderId: senderId, displayName: senderName)
         
@@ -77,7 +94,8 @@ extension Message: DatabaseRepresentation {
         var rep: [String: Any] = [
             "created": sentDate,
             "senderId": sender.senderId,
-            "senderName": sender.displayName
+            "senderName": sender.displayName,
+            "senderUrl": senderUrl
         ]
         
         if let url = downloadURL {

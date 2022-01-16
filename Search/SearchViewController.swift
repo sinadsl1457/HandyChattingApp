@@ -9,9 +9,6 @@ import UIKit
 import FirebaseAuth
 import Firebase
 import FirebaseFirestore
-import KakaoSDKAuth
-import KakaoSDKUser
-import KakaoSDKTalk
 
 class SearchViewController: CommonViewController {
     @IBOutlet weak var listTableView: UITableView!
@@ -26,11 +23,25 @@ class SearchViewController: CommonViewController {
         sc.searchBar.autocapitalizationType = .allCharacters
         return sc
     }()
-
+    
     var userList: [Users] = []
     var filteredUserList: [Users] = []
     var isSearching = false
     private var userListener: ListenerRegistration?
+    private let database = Firestore.firestore()
+    private var messageReference: CollectionReference?
+    private var path: String {
+        var path = ""
+        if let currentUser = currentUser {
+            currentUser.providerData.forEach {
+                if let providerEmail = $0.email {
+                    path = currentUser.email ?? providerEmail
+                }
+            }
+        }
+        return path
+    }
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -60,7 +71,7 @@ class SearchViewController: CommonViewController {
                 self.alert(message: "채널에 업데이트를 실패했습니다 \(error?.localizedDescription ?? "no error")")
                 return
             }
-        
+            
             snapshot.documentChanges.forEach { change in
                 guard let user = Users(document: change.document) else { return }
                 if change.type == .modified {
@@ -125,18 +136,29 @@ extension SearchViewController: UITableViewDataSource {
         }
     }
     
+    
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         let user = userList[indexPath.row]
         if let currentUser = currentUser {
-            chooseAlert(title: "대화방 만들기", message: "\(user.name) 과 대화를 하시겠습니까?") { _ in
-                DataManager.shared.chatsReference.document(user.name).setData(user.rep)
+            chooseAlert(title: "대화방 만들기", message: "\(user.name) 과 대화를 하시겠습니까?") {[weak self] _ in
+                guard let self = self else { return }
+                // outcoming user
+                let outcomingUserRef = self.database.collection("users/\(self.path)/thread")
+                outcomingUserRef.document(user.email).setData(user.rep)
+                // incoming user
+                let incomingUserRef = self.database.collection("users/\(user.email)/thread")
+                DataManager.shared.getUserInfo(email: self.path) { user in
+                    if let user = user {
+                        incomingUserRef.document(user.email).setData(user.rep)
+                    }
+                }
+                
                 let viewContoller = ChattingViewController(user: currentUser, channel: user)
                 self.navigationController?.pushViewController(viewContoller, animated: true)
             }
         }
     }
-    
 }
 
 

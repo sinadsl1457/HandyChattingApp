@@ -23,6 +23,7 @@ class UserInfoTableViewCell: UITableViewCell {
         user.providerData.forEach({ userInfo in
             path = userInfo.email ?? ""
         })
+    
         DataManager.shared.usersReference.document(path).getDocument { snapshot, error in
             guard let data = snapshot?.data(),
                   let email = data["email"] as? String,
@@ -30,7 +31,6 @@ class UserInfoTableViewCell: UITableViewCell {
                 print(error?.localizedDescription ?? "")
                 return
             }
-            
             self.nameLabel.text = name
             self.emailLabel.text = email
         }

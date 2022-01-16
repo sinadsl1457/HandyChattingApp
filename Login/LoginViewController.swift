@@ -22,6 +22,13 @@ class LoginViewController: CommonViewController {
     fileprivate var currentNonce: String?
     let manager = LoginManager()
     
+    @IBOutlet weak var emailLoginView: UIView!
+    @IBOutlet weak var facebookLoginView: UIView!
+    @IBOutlet weak var googleLoginView: UIView!
+    @IBOutlet weak var kakaoLoginView: UIView!
+    @IBOutlet weak var appleLoginView: UIView!
+    
+    
     @IBAction func signUpDidTouch(_ sender: Any) {
         let alert = UIAlertController(title: "SignIn", message: "please enter your email and password", preferredStyle: .alert)
         let okAction = UIAlertAction(title: "Access", style: .default) { _ in
@@ -50,6 +57,7 @@ class LoginViewController: CommonViewController {
         
         alert.addTextField { textEmail in
             textEmail.text = "Enter your email"
+            textEmail.clearButtonMode = .always
         }
         
         alert.addTextField { password in
@@ -92,6 +100,7 @@ class LoginViewController: CommonViewController {
                     DataManager.shared.createNewUserDocument(name: name, email: email, photoUrl: photoUrl.absoluteString)
                 }
             }
+        
             
             Auth.auth().signIn(with: credential) { userInfo, error in
                 if let error = error {
@@ -226,7 +235,10 @@ class LoginViewController: CommonViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+        [emailLoginView, facebookLoginView, googleLoginView, kakaoLoginView, appleLoginView].forEach {
+            $0?.layer.cornerRadius = 30
+            $0?.clipsToBounds = true
+        }
         
     }
     
@@ -305,10 +317,9 @@ extension LoginViewController: ASAuthorizationControllerDelegate {
                     if let error = error {
                         print(error.localizedDescription)
                     } else {
-                        guard let document = querySnapshot else { return }
-                        guard let data = document.data() else { return }
-                        guard let name = data["name"] as? String else { return }
-                        
+                        guard let document = querySnapshot,
+                              let data = document.data(),
+                              let name = data["name"] as? String else { return }
                         AppSettings.displayName = name
                     }
                 }

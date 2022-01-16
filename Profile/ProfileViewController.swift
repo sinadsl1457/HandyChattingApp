@@ -8,8 +8,6 @@
 import UIKit
 import FirebaseAuth
 import Firebase
-import KakaoSDKAuth
-import KakaoSDKUser
 import Photos
 import PhotosUI
 import SDWebImage
@@ -29,7 +27,7 @@ class ProfileViewController: CommonViewController {
     var nickNameAlertController: UIAlertController?
     var userName = ""
     var userEmail = ""
-    var profiles: [Profile] = []
+    
     
     @IBAction func changeNickName(_ sender: Any) {
         let alert = UIAlertController(title: "닉네임 변경", message: nil, preferredStyle: .alert)
@@ -73,9 +71,7 @@ class ProfileViewController: CommonViewController {
                     print("Error signing out: \(error.localizedDescription)")
                 }
             }
-        
         alertController.addAction(signOutAction)
-        
         present(alertController, animated: true)
     }
     
@@ -113,8 +109,18 @@ class ProfileViewController: CommonViewController {
 #endif
                 } else {
                     self.profileTableView.reloadData()
-                    let email = self.currentUser?.email
-                    DataManager.shared.usersReference.document(email!).updateData(["name": nickNameText.text ?? "error"])
+                    var providerEmail = ""
+                    if let currentUser = self.currentUser{
+                        currentUser.providerData.forEach {
+                            if let email = $0.email {
+                                providerEmail = email
+                            }
+                        }
+                        
+                        DataManager.shared.usersReference.document(currentUser.email ?? providerEmail).updateData(["name": nickNameText.text ?? "error"])
+                        DataManager.shared.chatsReference.document(currentUser.email ?? providerEmail).updateData(["name": nickNameText.text ?? "error"])
+                        AppSettings.displayName = nickNameText.text ?? "unknown"
+                    }
                 }
             }
         }
@@ -185,33 +191,18 @@ extension ProfileViewController: PHPickerViewControllerDelegate {
                 guard let image = image as? UIImage else { return }
                 NotificationCenter.default.post(name: .sendPic, object: nil, userInfo: ["pic": image])
                 
-                if let currentUser = self.currentUser {
-                    StorageManager.shared.uploadImageToFireStore(image, name: currentUser.displayName ?? "Unknown") { url in
-                        
-                        var providerEmail = ""
-                        var providerName = ""
-                        currentUser.providerData.forEach {
-                            if let email = $0.email, let name = $0.displayName {
-                                providerEmail = email
-                                providerName = name
-                            }
+                var path = ""
+                if let currentUser = self.currentUser{
+                    currentUser.providerData.forEach {
+                        if let email = $0.email {
+                            path = email
                         }
+                    }
+                    
+                    StorageManager.shared.uploadImageToFireStore(image, name: currentUser.displayName ?? "unknown") { url in
+                        DataManager.shared.usersReference.document(currentUser.email ?? path).updateData(["photoUrl": url?.absoluteString ?? ""])
                         
-                        DataManager.shared.usersReference.document(currentUser.email ?? providerEmail).updateData(["photoUrl": url?.absoluteString ?? ""])
-                        DataManager.shared.chatsReference.document(currentUser.displayName ?? providerName).updateData(["photoUrl": url?.absoluteString ?? ""])
-                        
-                        let changedRequest = currentUser.createProfileChangeRequest()
-                        changedRequest.photoURL = url
-                        changedRequest.commitChanges { error in
-                            if let error = error {
-                                self.alert(message: "faild to changed Profile pics \(error.localizedDescription)")
-                            } else {
-                                print("success chaged your profile picture.")
-                                DispatchQueue.main.async {
-                                    self.profileTableView.reloadData()
-                                }
-                            }
-                        }
+                        DataManager.shared.chatsReference.document(currentUser.email ?? path).updateData(["photoUrl": url?.absoluteString ?? ""])
                     }
                 }
             }
