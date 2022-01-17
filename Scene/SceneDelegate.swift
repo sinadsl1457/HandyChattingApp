@@ -15,10 +15,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     
     var window: UIWindow?
     
+    /// Connect the FIRAuth object and the listener to get information about the user logged in to the app in each app view. This listener is called whenever the user's login status changes.
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let _ = (scene as? UIWindowScene) else { return }
         let storyboard = UIStoryboard(name: "Main", bundle: nil)
-        
         Auth.auth().addStateDidChangeListener { auth, user in
           if user != nil {
               let HomeVC = storyboard.instantiateViewController(withIdentifier: "HomeVC")
@@ -63,6 +63,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
 
 extension SceneDelegate {
+    /// give permisstion external url
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
         if let url = URLContexts.first?.url {
             if (AuthApi.isKakaoTalkLoginUrl(url)) {

@@ -9,11 +9,9 @@ import Foundation
 import Firebase
 import FirebaseStorage
 
-public enum StorageError: Error {
-    case failedtoUpload
-    case faildtoGetDownloadUrl
-}
 
+/// this class use that whenever user have to upload picture or download url
+/// easily can access to firebase storage.
 final class StorageManager {
     static let shared = StorageManager()
     private init() { }
@@ -22,6 +20,12 @@ final class StorageManager {
 
 
 extension StorageManager {
+    
+    /// once you try passing to image and then successfully putdata where correct path,  you can download that url.
+    /// - Parameters:
+    ///   - image: selected pic
+    ///   - name: user name
+    ///   - completion: url from storage
    public func uploadImageToFireStore(_ image: UIImage, name: String, completion: @escaping (URL?) -> Void) {
         guard let scaledImage = image.scaledToSafeUploadSize,
               let data = scaledImage.jpegData(compressionQuality: 0.4) else {

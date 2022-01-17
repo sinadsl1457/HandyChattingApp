@@ -9,6 +9,7 @@ import Foundation
 import FirebaseFirestore
 import Firebase
 
+/// make for manage all users
 struct Users {
     var id: String = UUID().uuidString
     let name: String
@@ -16,7 +17,7 @@ struct Users {
     let photoUrl: String
 }
 
-
+/// I added an extension because I had to deliver multiple initialize depending on the situation.
 extension Users {
     init(channelName: String) {
         name = channelName
@@ -24,6 +25,8 @@ extension Users {
         photoUrl = ""
     }
     
+    
+    /// it's very important that make passing to realtime listener.
     init?(document: QueryDocumentSnapshot) {
         let data = document.data()
         
@@ -38,6 +41,8 @@ extension Users {
         self.photoUrl = photoUrl
     }
     
+    
+    /// must be need this representation whenever store to firestore.
     var rep: [String: Any] {
         [
             "id": id,
@@ -49,6 +54,7 @@ extension Users {
 }
 
 
+/// use for contain method implemented like this.
 extension Users: Comparable {
     static func == (lhs: Users, rhs: Users) -> Bool {
         return lhs.email == rhs.email

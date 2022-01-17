@@ -8,6 +8,7 @@
 import UIKit
 import SDWebImage
 
+/// to show channel list
 class ChannelTableViewCell: UITableViewCell {
     @IBOutlet weak var userImageView: UIImageView!
     

@@ -25,8 +25,6 @@ class ProfileViewController: CommonViewController {
         }
     }
     var nickNameAlertController: UIAlertController?
-    var userName = ""
-    var userEmail = ""
     
     
     @IBAction func changeNickName(_ sender: Any) {
@@ -98,29 +96,34 @@ class ProfileViewController: CommonViewController {
             return
         }
         guard let nickNameText = alertController.textFields?.first else { return }
-        
-        if let user = currentUser {
-            let changeRequest = user.createProfileChangeRequest()
+        if let currentUser = currentUser {
+            let changeRequest = currentUser.createProfileChangeRequest()
             changeRequest.displayName = nickNameText.text
-            changeRequest.commitChanges { error in
+            changeRequest.commitChanges {[weak self] error in
+                guard let self = self else { return }
                 if let error = error {
-#if DEBUG
+    #if DEBUG
                     print(error.localizedDescription)
-#endif
+    #endif
                 } else {
                     self.profileTableView.reloadData()
-                    var providerEmail = ""
-                    if let currentUser = self.currentUser{
-                        currentUser.providerData.forEach {
-                            if let email = $0.email {
-                                providerEmail = email
-                            }
+                    DataManager.shared.usersReference.document(self.path).updateData(["name": nickNameText.text ?? "error"])
+                    let userRef = self.database.collection("users/\(self.path)/thread")
+                    userRef.getDocuments { snapshot, error in
+                        guard let documents = snapshot?.documents else {
+                            print(error?.localizedDescription ?? "")
+                            return
                         }
                         
-                        DataManager.shared.usersReference.document(currentUser.email ?? providerEmail).updateData(["name": nickNameText.text ?? "error"])
-                        DataManager.shared.chatsReference.document(currentUser.email ?? providerEmail).updateData(["name": nickNameText.text ?? "error"])
-                        AppSettings.displayName = nickNameText.text ?? "unknown"
+                        for document in documents {
+                             let data = document.data()
+                            guard let email = data["email"] as? String else { return }
+                          let channelUserRef = self.database.collection("users/\(email)/thread")
+                            channelUserRef.document(self.path).updateData(["name": nickNameText.text ?? "no name"])
+                        }
                     }
+                    
+                    AppSettings.displayName = nickNameText.text ?? "unknown"
                 }
             }
         }
@@ -149,14 +152,16 @@ extension ProfileViewController: UITableViewDataSource {
         switch indexPath.section {
         case 0:
             let cell = tableView.dequeueReusableCell(withIdentifier: "ImageTableViewCell", for: indexPath) as! ImageTableViewCell
-            if let user = currentUser {
-                cell.configureCell(with: user)
-                self.hideActivity()
+            if let currentUser = currentUser {
+                cell.configureCell(with: currentUser)
             }
+                self.hideActivity()
             return cell
         case 1:
             let cell = tableView.dequeueReusableCell(withIdentifier: "UserInfoTableViewCell", for: indexPath) as! UserInfoTableViewCell
-            if let user = currentUser { cell.configureUserInfoCell(with: user) }
+            if let currentUser = currentUser {
+                cell.configureUserInfoCell(with: currentUser)
+            }
             return cell
         default:
             let cell = tableView.dequeueReusableCell(withIdentifier: "SettingTableViewCell", for: indexPath) as! SettingTableViewCell
@@ -187,22 +192,28 @@ extension ProfileViewController: PHPickerViewControllerDelegate {
         
         if let itemProvider = itemProvider {
             itemProvider.canLoadObject(ofClass: UIImage.self)
-            itemProvider.loadObject(ofClass: UIImage.self) { image, _ in
+            itemProvider.loadObject(ofClass: UIImage.self) {[weak self] image, _ in
+                guard let self = self else { return }
                 guard let image = image as? UIImage else { return }
                 NotificationCenter.default.post(name: .sendPic, object: nil, userInfo: ["pic": image])
-                
-                var path = ""
-                if let currentUser = self.currentUser{
-                    currentUser.providerData.forEach {
-                        if let email = $0.email {
-                            path = email
-                        }
-                    }
-                    
+                if let currentUser = self.currentUser {
                     StorageManager.shared.uploadImageToFireStore(image, name: currentUser.displayName ?? "unknown") { url in
-                        DataManager.shared.usersReference.document(currentUser.email ?? path).updateData(["photoUrl": url?.absoluteString ?? ""])
+                        DataManager.shared.usersReference.document(self.path).updateData(["photoUrl": url?.absoluteString ?? ""])
                         
-                        DataManager.shared.chatsReference.document(currentUser.email ?? path).updateData(["photoUrl": url?.absoluteString ?? ""])
+                        let userRef = self.database.collection("users/\(self.path)/thread")
+                        userRef.getDocuments { snapshot, error in
+                            guard let documents = snapshot?.documents else {
+                                print(error?.localizedDescription ?? "")
+                                return
+                            }
+                            
+                            for document in documents {
+                                 let data = document.data()
+                                guard let email = data["email"] as? String else { return }
+                              let channelUserRef = self.database.collection("users/\(email)/thread")
+                                channelUserRef.document(self.path).updateData(["photoUrl": url?.absoluteString ?? ""])
+                            }
+                        }
                     }
                 }
             }

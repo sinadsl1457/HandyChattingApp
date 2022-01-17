@@ -9,29 +9,19 @@ import UIKit
 import FirebaseAuth
 import FirebaseFirestore
 
+/// viewcontroller that show channel list
 class ChannelsViewController: CommonViewController {
     @IBOutlet weak var listTableView: UITableView!
     var channelList: [Users] = []
     var chatListener: ListenerRegistration?
-    private let database = Firestore.firestore()
-    private var path: String {
-        var path = ""
-        if let currentUser = currentUser {
-            currentUser.providerData.forEach {
-                if let providerEmail = $0.email {
-                    path = currentUser.email ?? providerEmail
-                }
-            }
-        }
-        return path
-    }
     
     
     override func viewDidLoad() {
         super.viewDidLoad()
         navigationItem.title = "대화"
         let userRef = self.database.collection("users/\(path)/thread")
-        chatListener = userRef.addSnapshotListener({ querySnapshot, error in
+        chatListener = userRef.addSnapshotListener({[weak self] querySnapshot, error in
+            guard let self = self else { return }
             guard let snapshot = querySnapshot else {
                 self.alert(message: "채널에 업데이트를 실패했습니다 \(error?.localizedDescription ?? "no error")")
                 return
@@ -117,16 +107,18 @@ extension ChannelsViewController: UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        let channel = channelList[indexPath.row]
         if editingStyle == .delete {
-            let channelName = channelList[indexPath.row].name
-            DataManager.shared.chatsReference.document(channelName).delete { error in
+            
+            let userRef = self.database.collection("users/\(path)/thread")
+            userRef.document(channel.email).delete { error in
+                print("#1", "\(channel.email)")
                 if let error = error {
                     self.alert(message: error.localizedDescription)
                     return
                 }
             }
             
-            let channel = channelList[indexPath.row]
             guard let index = channelList.firstIndex(of: channel) else {
                 return
             }
@@ -146,8 +138,8 @@ extension ChannelsViewController: UITableViewDelegate {
         tableView.deselectRow(at: indexPath, animated: true)
         let channel = channelList[indexPath.row]
         if let currentUser = currentUser {
-            let viewContoller = ChattingViewController(user: currentUser, channel: channel)
-            navigationController?.pushViewController(viewContoller, animated: true)
+        let viewContoller = ChattingViewController(user: currentUser, channel: channel)
+        navigationController?.pushViewController(viewContoller, animated: true)
         }
     }
     

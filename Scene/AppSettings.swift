@@ -32,6 +32,7 @@
 
 import Foundation
 
+/// initialize user name to display in chat.
 enum AppSettings {
   static private let displayNameKey = "DisplayName"
   static var displayName: String {

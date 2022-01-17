@@ -9,11 +9,13 @@ import UIKit
 import Alamofire
 import SDWebImage
 
+/// to specify error type.
 enum CachedImageError: Error {
     case wrongUrl
     case faildToCachedImage
 }
 
+/// to display user list and profile image.
 class SearchTableViewCell: UITableViewCell {
     @IBOutlet weak var nameLabel: UILabel!
     @IBOutlet weak var userImageView: UIImageView!
@@ -40,6 +42,10 @@ class SearchTableViewCell: UITableViewCell {
     }
     
     
+    /// to get all users's photoUrl use this method.
+    /// - Parameters:
+    ///   - user: all users from stored in user
+    ///   - completion: photoUrl
     func cachedUserImage(user: Users, completion: @escaping(Result<URL, Error>) -> Void) {
         guard let url = URL(string: user.photoUrl) else {
             completion(.failure(CachedImageError.wrongUrl))

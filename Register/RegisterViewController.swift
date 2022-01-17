@@ -109,7 +109,8 @@ extension RegisterViewController: PHPickerViewControllerDelegate {
         
         if let itemProvider = itemProvider {
             itemProvider.canLoadObject(ofClass: UIImage.self)
-            itemProvider.loadObject(ofClass: UIImage.self) { image, _ in
+            itemProvider.loadObject(ofClass: UIImage.self) {[weak self] image, _ in
+                guard let self = self else { return }
                 guard let image = image as? UIImage else { return }
                 self.userImage = image
                 DispatchQueue.main.async {

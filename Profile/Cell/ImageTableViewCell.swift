@@ -14,7 +14,6 @@ import SDWebImage
 class ImageTableViewCell: UITableViewCell {
     @IBOutlet weak var profileImageView: UIImageView!
     
-    
     override func awakeFromNib() {
         super.awakeFromNib()
         makeChangedRealTimeUserPic()
@@ -26,10 +25,11 @@ class ImageTableViewCell: UITableViewCell {
      func configureCell(with user: User) {
        var path = ""
         user.providerData.forEach {
-            path = $0.email!
+            path = user.email ?? $0.email!
         }
         
-        DataManager.shared.usersReference.document(path).getDocument { snapshot, error in
+        DataManager.shared.usersReference.document(path).getDocument {[weak self] snapshot, error in
+            guard let self = self else { return }
             guard let data = snapshot,
                   let photoUrl = data["photoUrl"] as? String,
                   let url = URL(string: photoUrl) else {
@@ -45,7 +45,8 @@ class ImageTableViewCell: UITableViewCell {
     
     
    private func makeChangedRealTimeUserPic() {
-        NotificationCenter.default.addObserver(forName: .sendPic, object: nil, queue: .main) { noti in
+        NotificationCenter.default.addObserver(forName: .sendPic, object: nil, queue: .main) {[weak self] noti in
+            guard let self = self else { return }
             guard let image = noti.userInfo?["pic"] as? UIImage else { return }
             self.profileImageView.image = image
         }

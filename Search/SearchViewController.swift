@@ -10,6 +10,7 @@ import FirebaseAuth
 import Firebase
 import FirebaseFirestore
 
+/// viewcontroller that showing all user list.
 class SearchViewController: CommonViewController {
     @IBOutlet weak var listTableView: UITableView!
     @IBOutlet weak var loadingView: UIView!
@@ -28,19 +29,8 @@ class SearchViewController: CommonViewController {
     var filteredUserList: [Users] = []
     var isSearching = false
     private var userListener: ListenerRegistration?
-    private let database = Firestore.firestore()
     private var messageReference: CollectionReference?
-    private var path: String {
-        var path = ""
-        if let currentUser = currentUser {
-            currentUser.providerData.forEach {
-                if let providerEmail = $0.email {
-                    path = currentUser.email ?? providerEmail
-                }
-            }
-        }
-        return path
-    }
+    // Absolutely to get current email
     
     
     override func viewDidLoad() {
@@ -55,7 +45,7 @@ class SearchViewController: CommonViewController {
         loadingView.backgroundColor = .clear
         userProfileListener()
         
-        // 서버로부터 데이터를 받아오는데까지 시간을 두기 위해 2초간 탭바를 숨깁니다.
+        // hide the tab bar for 2 seconds to take time to get data from the server.
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             self.indicator.stopAnimating()
             self.loadingView.isHidden = true
@@ -65,6 +55,7 @@ class SearchViewController: CommonViewController {
     }
     
     
+    /// whenever happened that add, update, delete this listener try call appropriate method realtime.
     private func userProfileListener() {
         userListener = DataManager.shared.usersReference.addSnapshotListener({ querySnapshot, error in
             guard let snapshot = querySnapshot else {
@@ -85,6 +76,7 @@ class SearchViewController: CommonViewController {
     }
     
     
+    /// append to userlist all userlist from firestore.
     private func getUserDataFromFireStore() {
         DataManager.shared.usersReference.getDocuments { querySnapshots, error in
             if let error = error {
@@ -107,6 +99,7 @@ class SearchViewController: CommonViewController {
     }
     
     
+    /// must be remove listener once finished task. that's why declare variable
     deinit {
         userListener?.remove()
     }
@@ -137,16 +130,24 @@ extension SearchViewController: UITableViewDataSource {
     }
     
     
+    /// save the selected user to the reference. At the same time, save sender information to the recipient.
+    /// - Parameters:
+    ///   - tableView: tableView
+    ///   - indexPath: indexpath include users
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         let user = userList[indexPath.row]
-        if let currentUser = currentUser {
-            chooseAlert(title: "대화방 만들기", message: "\(user.name) 과 대화를 하시겠습니까?") {[weak self] _ in
-                guard let self = self else { return }
-                // outcoming user
+        chooseAlert(title: "대화방 만들기", message: "\(user.name) 과 대화를 하시겠습니까?") {[weak self] _ in
+            guard let self = self else { return }
+            if let currentUser = self.currentUser {
+                guard currentUser.email != user.email else {
+                    self.alert(message: "나와의 대화는 지원하지않습니다.")
+                    return
+                }
+                // outcoming message
                 let outcomingUserRef = self.database.collection("users/\(self.path)/thread")
                 outcomingUserRef.document(user.email).setData(user.rep)
-                // incoming user
+                // incoming message
                 let incomingUserRef = self.database.collection("users/\(user.email)/thread")
                 DataManager.shared.getUserInfo(email: self.path) { user in
                     if let user = user {
@@ -169,6 +170,8 @@ extension SearchViewController: UITableViewDelegate {
 }
 
 
+/// make for search users list
+/// save to filteredUserList with filtered userlist
 extension SearchViewController: UISearchResultsUpdating, UISearchControllerDelegate {
     func updateSearchResults(for searchController: UISearchController) {
         guard let searchBarText = searchController.searchBar.text else { return }

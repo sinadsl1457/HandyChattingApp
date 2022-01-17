@@ -21,7 +21,7 @@ class UserInfoTableViewCell: UITableViewCell {
     func configureUserInfoCell(with user: User) {
         var path = ""
         user.providerData.forEach({ userInfo in
-            path = userInfo.email ?? ""
+            path = user.email ?? userInfo.email!
         })
     
         DataManager.shared.usersReference.document(path).getDocument { snapshot, error in

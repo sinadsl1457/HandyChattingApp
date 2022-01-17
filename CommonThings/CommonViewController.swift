@@ -10,7 +10,9 @@ import PhotosUI
 import FirebaseFirestore
 import FirebaseAuth
 import Firebase
+import KakaoSDKAuth
 
+/// class that common collects method and property
 class CommonViewController: UIViewController {
     let currentUser = Auth.auth().currentUser
     var userImage: UIImage?
@@ -20,6 +22,19 @@ class CommonViewController: UIViewController {
         config.selectionLimit = 1
         return PHPickerViewController(configuration: config)
     }()
+    
+    let database = Firestore.firestore()
+    var path: String {
+        var path = ""
+        if let currentUser = currentUser {
+            currentUser.providerData.forEach {
+                if let providerEmail = $0.email {
+                    path = currentUser.email ?? providerEmail
+                }
+            }
+        }
+        return path
+    }
     
     
     override func viewDidLoad() {
