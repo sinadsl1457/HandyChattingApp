@@ -14,11 +14,11 @@ class ChannelsViewController: CommonViewController {
     @IBOutlet weak var listTableView: UITableView!
     var channelList: [Users] = []
     var chatListener: ListenerRegistration?
-    
+
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        navigationItem.title = "대화"
+        navigationItem.title = "채팅"
         let userRef = self.database.collection("users/\(path)/thread")
         chatListener = userRef.addSnapshotListener({[weak self] querySnapshot, error in
             guard let self = self else { return }
@@ -118,7 +118,7 @@ extension ChannelsViewController: UITableViewDataSource {
                     return
                 }
             }
-            
+          
             guard let index = channelList.firstIndex(of: channel) else {
                 return
             }
@@ -137,9 +137,10 @@ extension ChannelsViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         let channel = channelList[indexPath.row]
-        if let currentUser = currentUser {
-        let viewContoller = ChattingViewController(user: currentUser, channel: channel)
-        navigationController?.pushViewController(viewContoller, animated: true)
+        if let currentUSer = currentUser {
+            print(">>>>>>>>>>>>>>", channel.email)
+            let viewContoller = ChattingViewController(user: currentUSer, channel: channel)
+            navigationController?.pushViewController(viewContoller, animated: true)
         }
     }
     

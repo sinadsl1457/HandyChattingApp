@@ -91,20 +91,22 @@ class LoginViewController: CommonViewController {
             else {
                 return
             }
-            
+            print(name, email, photoUrl)
             let credential = GoogleAuthProvider.credential(withIDToken: idToken,
                                                            accessToken: authentication.accessToken)
             
-            DataManager.shared.userExists(with: email) { exist in
-                if !exist {
-                    DataManager.shared.createNewUserDocument(name: name, email: email, photoUrl: photoUrl.absoluteString)
-                }
-            }
-        
+
+            
+            
             
             Auth.auth().signIn(with: credential) { userInfo, error in
                 if let error = error {
                     alert(message: error.localizedDescription)
+                }
+                DataManager.shared.userExists(with: email) { exist in
+                    if !exist {
+                        DataManager.shared.createNewUserDocument(name: name, email: email, photoUrl: photoUrl.absoluteString)
+                    }
                 }
                 
                 AppSettings.displayName = name
@@ -154,20 +156,21 @@ class LoginViewController: CommonViewController {
                                             // check wheather exist already kakauseraccount or not.
                                             DataManager.shared.userExists(with: email) { exist in
                                                 if !exist {
-                                                    DataManager.shared.createNewUserDocument(name: nickName, email: email, photoUrl: imageUrl.absoluteString)
                                                     Auth.auth().createUser(withEmail: email, password: String(id)) { _, error in
                                                         if error != nil {
                                                             print(error?.localizedDescription ?? "")
+                                                         
+                                                            Auth.auth().signIn(withEmail: email, password: String(id), completion:  { _, error in
+                                                                if error == nil {
+                                                                    print("success kakao account login.")
+                                                                }
+                                                                DataManager.shared.createNewUserDocument(name: nickName, email: email, photoUrl: imageUrl.absoluteString)
+                                                                
+                                                            })
                                                         }
                                                     }
                                                 }
                                             }
-                                            
-                                            Auth.auth().signIn(withEmail: email, password: String(id), completion:  { _, error in
-                                                if error == nil {
-                                                    print("success kakao account login.")
-                                                }
-                                            })
                                         }
                                     }
                                 }

@@ -140,10 +140,11 @@ extension SearchViewController: UITableViewDataSource {
         chooseAlert(title: "대화방 만들기", message: "\(user.name) 과 대화를 하시겠습니까?") {[weak self] _ in
             guard let self = self else { return }
             if let currentUser = self.currentUser {
-                guard currentUser.email != user.email else {
+                guard self.path != user.email else {
                     self.alert(message: "나와의 대화는 지원하지않습니다.")
                     return
                 }
+            
                 // outcoming message
                 let outcomingUserRef = self.database.collection("users/\(self.path)/thread")
                 outcomingUserRef.document(user.email).setData(user.rep)

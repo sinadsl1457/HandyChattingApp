@@ -108,7 +108,6 @@ class ChattingViewController: MessagesViewController {
               """)
                     return
                 }
-                
                 snapshot.documentChanges.forEach { change in
                     self.handleDocumentChange(change)
                 }
@@ -116,7 +115,8 @@ class ChattingViewController: MessagesViewController {
     }
     
     private func save(_ message: Message) {
-        outcomingReference.addDocument(data: message.representation) { [weak self] error in
+        outcomingReference
+            .addDocument(data: message.representation) { [weak self] error in
             guard let self = self else { return }
             if let error = error {
                 print("Error sending message: \(error.localizedDescription)")
@@ -378,30 +378,18 @@ extension ChattingViewController: MessagesDisplayDelegate {
         at indexPath: IndexPath,
         in messagesCollectionView: MessagesCollectionView
     ) {
-       
-        outcomingReference.whereField("senderId", isNotEqualTo: currentUser.uid).getDocuments { snapshot, error in
-            guard let documents = snapshot?.documents else { return }
-            documents.forEach { doc in
-                let data = doc.data()
-                guard let senderUrl = data["senderUrl"] as? String else { return }
-                guard let Url = URL(string: senderUrl) else { return }
-            
-                DispatchQueue.main.async {
-                    avatarView.sd_setImage(with: Url, completed: nil)
-                }
-            }
-        }
         
-        incomingReference.whereField("senderId", isNotEqualTo: currentUser.uid).getDocuments { snapshot, error in
-            guard let documents = snapshot?.documents else { return }
-            documents.forEach { doc in
-                let data = doc.data()
-                guard let senderUrl = data["senderUrl"] as? String else { return }
-                guard let Url = URL(string: senderUrl) else { return }
+        let userRef = self.database.collection("users/\(path)/thread/")
+        userRef.document(channel.email).getDocument { snapshot, error in
+            guard let data = snapshot?.data() else { return }
+            guard let urlStr = data["photoUrl"] as? String,
+                  let url = URL(string: urlStr) else {
+                      print(error?.localizedDescription ?? "")
+                      return
+                  }
             
-                DispatchQueue.main.async {
-                    avatarView.sd_setImage(with: Url, completed: nil)
-                }
+            DispatchQueue.main.async {
+                avatarView.sd_setImage(with: url, completed: nil)
             }
         }
     }
