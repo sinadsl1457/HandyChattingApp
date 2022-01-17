@@ -1,6 +1,6 @@
 HandyChattingApp
 
-Basically can chat with other users and realtime store user profile. 
+Basically can chat with other users and realtime store user profile. (현제 코드가 많이 지저분합니다.. 리팩토링 하는중입니다.)
 
 
 introduced this app function: 
