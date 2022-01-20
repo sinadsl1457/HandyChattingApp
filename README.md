@@ -10,7 +10,6 @@ introduced this app function:
 - support share image and video each other in chat.
 - you can anytime change your profile image and nickname. it's gonna store to frestore meaning that permanent.
 - can seaching that All the users who are registered to our app...
-- it's not some perfectly app, i made this for just portfolio !!
  
 
 
