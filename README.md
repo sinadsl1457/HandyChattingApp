@@ -26,10 +26,6 @@ introduced this app function:
 
 
 
-
-// I modified it to show the new updated user picture.
-
-
 ![6](https://user-images.githubusercontent.com/70827896/149559311-0db490ae-095c-4565-9791-3ac609808aa5.gif)
 
 
