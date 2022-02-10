@@ -18,7 +18,9 @@ Basically can chat with other users and realtime store user profile.
 
 ![3](https://user-images.githubusercontent.com/70827896/149076885-d826c209-a945-4639-8e63-3c102716af18.gif) ![4](https://user-images.githubusercontent.com/70827896/149076901-3e689420-f195-4adb-ab17-363ed7f79d52.gif)
 
-![5](https://user-images.githubusercontent.com/70827896/149076933-55659f82-c6a1-4b3d-bf4d-58830a51ee87.gif) ![6](https://user-images.githubusercontent.com/70827896/149559311-0db490ae-095c-4565-9791-3ac609808aa5.gif)
+![5](https://user-images.githubusercontent.com/70827896/149076933-55659f82-c6a1-4b3d-bf4d-58830a51ee87.gif) 
+
+![6](https://user-images.githubusercontent.com/70827896/149559311-0db490ae-095c-4565-9791-3ac609808aa5.gif)
 
 
 
