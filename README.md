@@ -34,7 +34,7 @@ Basically can chat with other users and realtime store user profile.
 
 Reference to Raywenderlich RealTimeChat, Raywenderlich FireStore Book and videos, firebase document, FireStore Document, Kakao Document, Facebook Document, Hacking with Swift, Messagekit doument etc...
 
-installed Independency: 
+installed dependency: 
 pod 'Firebase/Firestore'
 pod 'Firebase/Database'
 pod 'Firebase/Auth'
