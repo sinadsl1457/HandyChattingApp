@@ -14,19 +14,20 @@ import Firebase
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     
     var window: UIWindow?
+    let appdelegate = AppDelegate()
     
     /// Connect the FIRAuth object and the listener to get information about the user logged in to the app in each app view. This listener is called whenever the user's login status changes.
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let _ = (scene as? UIWindowScene) else { return }
         let storyboard = UIStoryboard(name: "Main", bundle: nil)
         Auth.auth().addStateDidChangeListener { auth, user in
-          if user != nil {
-              let HomeVC = storyboard.instantiateViewController(withIdentifier: "HomeVC")
-              self.window?.rootViewController = HomeVC
-          } else {
-              let loginVC = storyboard.instantiateViewController(withIdentifier: "LoginVC")
-              self.window?.rootViewController = loginVC
-          }
+            if user != nil {
+                let HomeVC = storyboard.instantiateViewController(withIdentifier: "HomeVC")
+                self.window?.rootViewController = HomeVC
+            } else {
+                let loginVC = storyboard.instantiateViewController(withIdentifier: "LoginVC")
+                self.window?.rootViewController = loginVC
+            }
         }
     }
     
@@ -38,8 +39,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
     
     func sceneDidBecomeActive(_ scene: UIScene) {
-        // Called when the scene has moved from an inactive state to an active state.
-        // Use this method to restart any tasks that were paused (or not yet started) when the scene was inactive.
+    
     }
     
     func sceneWillResignActive(_ scene: UIScene) {
@@ -53,9 +53,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
     
     func sceneDidEnterBackground(_ scene: UIScene) {
-        // Called as the scene transitions from the foreground to the background.
-        // Use this method to save data, release shared resources, and store enough scene-specific state information
-        // to restore the scene back to its current state.
+        
     }
     
     
@@ -69,7 +67,7 @@ extension SceneDelegate {
             if (AuthApi.isKakaoTalkLoginUrl(url)) {
                 _ = AuthController.handleOpenUrl(url: url)
             }
-              else if url.absoluteString.hasPrefix("fb") {
+            else if url.absoluteString.hasPrefix("fb") {
                 ApplicationDelegate.shared.application(
                     UIApplication.shared,
                     open: url,

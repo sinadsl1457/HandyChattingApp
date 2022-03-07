@@ -33,10 +33,12 @@
 import UIKit
 
 extension UIScrollView {
-  var isAtBottom: Bool {
+    /// if verticalOffsetForBottom less then contentOffset.y it's mean that scrollView is at bottom.
+    var isAtBottom: Bool {
     return contentOffset.y >= verticalOffsetForBottom
   }
 
+    /// find verticalOffsetForBottom
   var verticalOffsetForBottom: CGFloat {
     let scrollViewHeight = bounds.height
     let scrollContentSizeHeight = contentSize.height

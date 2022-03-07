@@ -33,6 +33,7 @@
 import Foundation
 import MessageKit
 
+/// use for Message required property
 struct Sender: SenderType {
   let senderId: String
   let displayName: String

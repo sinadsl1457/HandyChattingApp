@@ -11,15 +11,27 @@ import MessageKit
 import FirebaseFirestore
 
 
+/// for implement message function made data structure like this.
+/// must be conform to MessageType protocol
 struct Message: MessageType {
+    /// documentId
     let id: String?
+    
+    /// messageId
     var messageId: String {
         return id ?? UUID().uuidString
     }
     
+    /// message content
     let content: String?
+    
+    /// message sent date
     let sentDate: Date
+    
+    /// It's used to identify who's sending it.
     let sender: SenderType
+    
+    /// Use to define the associated value when the message type is text and when it is a picture.
     var kind: MessageKind {
         if let image = image {
             let mediaItem = ImageMediaItem(image: image)
@@ -29,10 +41,20 @@ struct Message: MessageType {
         }
     }
     
+    /// Image message
     var image: UIImage?
+    
+    /// uploaded photo url
     var downloadURL: URL?
+    
+    /// user profilepicture url
     let senderUrl: String
     
+    /// use this init whenever passing to savemethod
+    /// - Parameters:
+    ///   - user: currentUser
+    ///   - users: Users
+    ///   - content: message content
     init(user: User, users: Users, content: String) {
         sender = Sender(senderId: user.uid, displayName: users.name)
         self.content = content
@@ -42,15 +64,11 @@ struct Message: MessageType {
     }
     
     
-//    init(user: User, content: String) {
-//        sender = Sender(senderId: user.uid, displayName: AppSettings.displayName)
-//        self.content = content
-//        sentDate = Date()
-//        id = nil
-//        senderUrl = ""
-//    }
-//
-    
+    /// use this init whenever user upload picture in chat, 
+    /// - Parameters:
+    ///   - user: currentUser
+    ///   - image: selected Image
+    ///   - users: Users
     init(user: User, image: UIImage, users: Users) {
         sender = Sender(senderId: user.uid, displayName: users.name)
         self.image = image
@@ -60,6 +78,9 @@ struct Message: MessageType {
         senderUrl = ""
     }
     
+    
+    /// whenever listener passing to documentChange to handlemethod use this init
+    /// bc we can only get data json type.
     init?(document: QueryDocumentSnapshot) {
         let data = document.data()
         guard let sendDate = data["created"] as? Timestamp,
@@ -90,6 +111,7 @@ struct Message: MessageType {
 
 // MARK: - DatabaseRepresentation
 extension Message: DatabaseRepresentation {
+    /// whenever add document to reference need this representation.
     var representation: [String: Any] {
         var rep: [String: Any] = [
             "created": sentDate,
@@ -103,7 +125,6 @@ extension Message: DatabaseRepresentation {
         } else {
             rep["content"] = content
         }
-        
         return rep
     }
 }

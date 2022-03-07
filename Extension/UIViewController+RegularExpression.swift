@@ -7,30 +7,25 @@
 
 import UIKit
 
-/// 정규식
-/// - Author: 안상희
+/// Regular Expression
 struct Regex {
-    /// 이메일 주소를 검증하기 위한 정규식
+    /// Regular expression to verify your email address.
     static let email = "^([a-z0-9_\\.-]+)@([\\da-z\\.-]+)\\.([a-z\\.]{2,6})$"
     
-    /// 아이디를 검증하기 위한 정규식
-    ///
-    /// 영문 소문자로 시작하는 아이디, 길이는 5~15자, 끝날 때 제한이 없습니다.
+    /// Regular expression to verify your ID.
+    /// The ID that starts with lowercase English characters, the length is 5 to 15 characters, and there is no limit at the end.
     static let id = "^[a-z]{5,15}/g"
     
-    /// 비밀번호를 검증하기 위한 정규식
-    ///
-    /// 최소 8 자, 대문자 하나 이상, 소문자 하나, 숫자 하나 및 특수 문자 하나 이상입니다.
+    /// Regular expression to verify your Passwod.
+    /// There are at least 8 characters, at least one uppercase letter, one lowercase letter, one number, and at least.
     static let password = #"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[$@$!%*?&])[A-Za-z\d$@$!%*?&]{8,}"#
 }
 
-/// 이메일 / 비밀번호 정규식 검증 익스텐션
-/// - Author: 황신택 (sinadsl1457@gmail.com)
+
 extension UIViewController {
-    /// 이메일 주소의 형식을 검증합니다.
-    /// - Parameter email: 사용자 이메일
-    /// - Returns: 검증에 성공하면 true, 실패하면 false를 리턴합니다.
-    /// - Author: 황신택 (sinadsl1457@gmail.com)
+    /// Verifies the format of the email address.
+    /// - Parameter email: user email
+    /// - Returns: if success verified email return true otherwise false
     func isEmailValid(_ email: String) -> Bool {
         if let range = email.range(of: Regex.email, options: [.regularExpression]), (range.lowerBound, range.upperBound) == (email.startIndex, email.endIndex) {
             return true
@@ -39,10 +34,9 @@ extension UIViewController {
     }
 
        
-    /// 암호 문자열의 형식을 검증합니다.
-    /// - Parameter password: 사용자 암호
-    /// - Returns: 검증에 성공하면 true, 실패하면 false를 리턴합니다.
-    /// - Author: 황신택 (sinadsl1457@gmail.com)
+    /// Verifies the format of the password address.
+    /// - Parameter password: user password
+    /// - Returns: if success verified passwrod return true otherwise false
     func isPasswordValid(_ password : String) -> Bool{
         if let range = password.range(of: Regex.password, options: [.regularExpression]), (range.lowerBound, range.upperBound) == (password.startIndex, password.endIndex) {
             return true

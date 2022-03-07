@@ -9,15 +9,18 @@ import UIKit
 import Firebase
 import FirebaseAuth
 
+/// Display userInfomation in cell
 class UserInfoTableViewCell: UITableViewCell {
     @IBOutlet weak var nameLabel: UILabel!
     @IBOutlet weak var emailLabel: UILabel!
     
     override func awakeFromNib() {
         super.awakeFromNib()
-        // Initialization code
+
     }
     
+    /// get user name, email using current User email data
+    /// - Parameter user: currentUser
     func configureUserInfoCell(with user: User) {
         var path = ""
         user.providerData.forEach({ userInfo in

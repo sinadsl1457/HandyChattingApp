@@ -33,6 +33,7 @@
 import UIKit
 import MessageKit
 
+/// use for photo messagekind 
 struct ImageMediaItem: MediaItem {
   var url: URL?
   var image: UIImage?

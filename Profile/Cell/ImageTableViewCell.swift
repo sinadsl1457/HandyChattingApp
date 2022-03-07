@@ -11,6 +11,7 @@ import FirebaseFirestore
 import Firebase
 import SDWebImage
 
+/// Display user profile image in cell
 class ImageTableViewCell: UITableViewCell {
     @IBOutlet weak var profileImageView: UIImageView!
     
@@ -22,6 +23,8 @@ class ImageTableViewCell: UITableViewCell {
         profileImageView.contentMode = .scaleAspectFill
     }
     
+    /// get user photoUrl using current User email data and passing url to sd_setImage method
+    /// - Parameter user: currentUser
      func configureCell(with user: User) {
        var path = ""
         user.providerData.forEach {
@@ -44,6 +47,7 @@ class ImageTableViewCell: UITableViewCell {
     }
     
     
+    /// When you choose a picture from the library, the notification delivers the image.
    private func makeChangedRealTimeUserPic() {
         NotificationCenter.default.addObserver(forName: .sendPic, object: nil, queue: .main) {[weak self] noti in
             guard let self = self else { return }

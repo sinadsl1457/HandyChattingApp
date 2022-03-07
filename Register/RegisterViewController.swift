@@ -12,6 +12,7 @@ import Firebase
 import PhotosUI
 import KakaoSDKAuth
 
+/// Register Class
 class RegisterViewController: CommonViewController {
     @IBOutlet weak var profileImageView: UIImageView!
     @IBOutlet weak var uploadBtn: UIButton!
@@ -21,6 +22,8 @@ class RegisterViewController: CommonViewController {
     @IBOutlet weak var repeatPasswordTextField: UITextField!
     
     
+    /// After entering the user information, the information will be verified and processed.
+    /// - Parameter sender: UIButton
     @IBAction func completeBtn(_ sender: Any) {
         guard let email = emailTextField.text,
               let name = nameTextField.text,
@@ -49,7 +52,10 @@ class RegisterViewController: CommonViewController {
                 print(error.localizedDescription)
 #endif
             }
+            
             AppSettings.displayName = name
+            
+            // after upload user image, create new document
             if let image = self.userImage {
                 StorageManager.shared.uploadImageToFireStore(image, name: name) { url in
                     DataManager.shared.createNewUserDocument(name: name,
@@ -61,7 +67,8 @@ class RegisterViewController: CommonViewController {
     }
     
     
-    
+    /// present user library
+    /// - Parameter sender: UIbutton
     @IBAction func uploadPhoto(_ sender: Any) {
         present(picker, animated: true, completion: nil)
     }
@@ -81,19 +88,23 @@ class RegisterViewController: CommonViewController {
         addKeyboardWillShow()
         
         view.addGestureRecognizer(UITapGestureRecognizer(target: view, action: #selector(UIView.endEditing(_:))))
-        
-        passwordTextField.text = "Kkl4547967!"
-        repeatPasswordTextField.text = "Kkl4547967!"
     }
     
     
+    /// Use the keyboardFrameEndUserInfoKey to calculate the keyboard height and subtract the appropriate height.
     func addKeyboardWillShow() {
         NotificationCenter.default.addObserver(forName: UIResponder.keyboardWillShowNotification, object: nil, queue: .main) { noti in
             guard let height = (noti.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue.height else { return }
+            
+            print(self.view.frame.origin.y, height)
+            
             self.view.frame.origin.y = 50 - height
+            
+            
         }
     }
     
+    /// Make lower keyboard
     func addKeyboardWillHide() {
         NotificationCenter.default.addObserver(forName: UIResponder.keyboardWillHideNotification, object: nil, queue: .main) { _ in
             self.view.frame.origin.y = 0
@@ -103,6 +114,10 @@ class RegisterViewController: CommonViewController {
 
 
 extension RegisterViewController: PHPickerViewControllerDelegate {
+    /// After picking picture assign image data to profileimage
+    /// - Parameters:
+    ///   - picker: PHPickerViewController
+    ///   - results: PHPickerResult
     func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
         picker.dismiss(animated: true)
         let itemProvider = results.first?.itemProvider

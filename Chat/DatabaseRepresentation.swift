@@ -32,6 +32,7 @@
 
 import Foundation
 
+/// use for document field representation
 protocol DatabaseRepresentation {
   var representation: [String: Any] { get }
 }

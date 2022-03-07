@@ -15,6 +15,20 @@ struct Users {
     let name: String
     let email: String
     let photoUrl: String
+    let lastMessage: String?
+    let messageCnt: Int?
+    
+    init(name: String,
+         email: String,
+         photoUrl: String,
+         lasMessage: String? = nil,
+         messageCnt: Int? = nil) {
+        self.name = name
+        self.email = email
+        self.photoUrl = photoUrl
+        self.lastMessage = lasMessage
+        self.messageCnt = messageCnt
+    }
 }
 
 /// I added an extension because I had to deliver multiple initialize depending on the situation.
@@ -23,24 +37,28 @@ extension Users {
         name = channelName
         email = ""
         photoUrl = ""
+        lastMessage = ""
+        messageCnt = 0
+
     }
-    
     
     /// it's very important that make passing to realtime listener.
     init?(document: QueryDocumentSnapshot) {
         let data = document.data()
-        
         guard let name = data["name"] as? String,
               let email = data["email"] as? String,
-              let photoUrl = data["photoUrl"] as? String else {
-                  return nil
-              }
+              let photoUrl = data["photoUrl"] as? String,
+              let lastMessage = data["lastMessage"] as? String,
+              let messageCnt = data["messageCnt"] as? Int else {
+            return nil
+        }
         
         self.name = name
         self.email = email
         self.photoUrl = photoUrl
+        self.lastMessage = lastMessage
+        self.messageCnt = messageCnt
     }
-    
     
     /// must be need this representation whenever store to firestore.
     var rep: [String: Any] {
@@ -48,7 +66,9 @@ extension Users {
             "id": id,
             "name": name,
             "email": email,
-            "photoUrl": photoUrl
+            "photoUrl": photoUrl,
+            "lastMessage": lastMessage ?? "사진을 보냈습니다.",
+            "messageCnt": messageCnt ?? 0
         ]
     }
 }

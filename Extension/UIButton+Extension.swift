@@ -10,8 +10,7 @@ import UIKit
 
 
 extension UIButton {
-    /// 기본 버튼 테마를 설정합니다. 버튼이 Enabled 되어있을 때 사용합니다.
-    /// - Author: 안상희
+    /// Set the default button theme. Use it when the button is enabled.
     func setToEnabledButtonTheme() {
         self.backgroundColor = UIColor(named: "black")
         self.tintColor = UIColor.white
@@ -21,8 +20,7 @@ extension UIButton {
     }
     
     
-    /// 기본 버튼 테마를 설정합니다. 버튼이 Disabled 되었을 때 사용합니다.
-    /// - Author: 안상희
+    /// Set the default button theme. Use when the button is disabled.
     func setToDisabledButtonTheme() {
         self.backgroundColor = UIColor(named: "lightGrayNonSelectedColor")
         self.tintColor = UIColor.white

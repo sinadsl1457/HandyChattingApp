@@ -20,7 +20,6 @@ final class StorageManager {
 
 
 extension StorageManager {
-    
     /// once you try passing to image and then successfully putdata where correct path,  you can download that url.
     /// - Parameters:
     ///   - image: selected pic

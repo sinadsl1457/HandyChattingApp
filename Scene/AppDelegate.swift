@@ -7,26 +7,33 @@
 
 import UIKit
 import Firebase
+import FirebaseAuth
 import GoogleSignIn
 import KakaoSDKAuth
 import KakaoSDKUser
 import KakaoSDKCommon
 import FBSDKCoreKit
+import FirebaseMessaging
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
-    
+    var userId: String?
     /// initialize each loginsystem object
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         FirebaseApp.configure()
-        
+        registerForPushNotifications(application: application)
+        Auth.auth().addStateDidChangeListener {[weak self] auth, user in
+            guard let self = self else { return }
+            if let user = user {
+                self.userId = user.email ?? "" 
+            }
+        }
         ApplicationDelegate.shared.application(
             application,
             didFinishLaunchingWithOptions: launchOptions
         )
         
         KakaoSDKCommon.initSDK(appKey: kakaoAppKey)
-    
         return true
     }
     
@@ -44,6 +51,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // If any sessions were discarded while the application was not running, this will be called shortly after application:didFinishLaunchingWithOptions.
         // Use this method to release any resources that were specific to the discarded scenes, as they will not return.
     }
+    
 }
 
 
@@ -54,4 +62,10 @@ extension AppDelegate {
       -> Bool {
       return GIDSignIn.sharedInstance.handle(url)
     }
+
 }
+
+
+
+
+

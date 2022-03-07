@@ -34,6 +34,7 @@ extension DataManager {
                 completion(false)
                 return
             }
+            print(email)
             completion(true)
         }
     }
@@ -44,10 +45,12 @@ extension DataManager {
     ///   - name: user name
     ///   - email: user email
     ///   - photoUrl: user photo Url
-   public func createNewUserDocument(name: String, email: String, photoUrl: String? = nil) {
+    public func createNewUserDocument(name: String, email: String, photoUrl: String? = nil) {
         guard let urlStr = photoUrl else { return }
+    
         let user = Users(name: name, email: email, photoUrl: urlStr)
         usersReference.document(email).setData(user.rep)
+    
     }
 
     
@@ -66,8 +69,12 @@ extension DataManager {
                 return
             }
         
-            let users = Users(name: name, email: email, photoUrl: photoUrl)
+            let users = Users(name: name,
+                              email: email,
+                              photoUrl: photoUrl)
             completion(users)
         }
     }
+    
+  
 }

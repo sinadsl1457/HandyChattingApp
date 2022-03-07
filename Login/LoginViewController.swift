@@ -17,11 +17,11 @@ import KakaoSDKUser
 import FBSDKLoginKit
 
 
+/// Social media Login
 class LoginViewController: CommonViewController {
     @IBOutlet weak var loginStackView: UIStackView!
     fileprivate var currentNonce: String?
     let manager = LoginManager()
-    
     @IBOutlet weak var emailLoginView: UIView!
     @IBOutlet weak var facebookLoginView: UIView!
     @IBOutlet weak var googleLoginView: UIView!
@@ -29,6 +29,7 @@ class LoginViewController: CommonViewController {
     @IBOutlet weak var appleLoginView: UIView!
     
     
+    /// User can sigin-in using registered email
     @IBAction func signUpDidTouch(_ sender: Any) {
         let alert = UIAlertController(title: "SignIn", message: "please enter your email and password", preferredStyle: .alert)
         let okAction = UIAlertAction(title: "Access", style: .default) { _ in
@@ -36,6 +37,7 @@ class LoginViewController: CommonViewController {
                   let passwordField = alert.textFields?.last,
                   let emailFieldText = emailField.text,
                   let passwordFieldText = passwordField.text,
+                  // once passing email try to validate
                   self.isEmailValid(emailFieldText),
                   self.isPasswordValid(passwordFieldText) else {
                       self.alert(message: "please check your email form or password form")
@@ -72,6 +74,7 @@ class LoginViewController: CommonViewController {
     }
     
     
+    /// User can sign-in using google account
     @IBAction func signInGoogle(_ sender: Any) {
         guard let clientID = FirebaseApp.app()?.options.clientID else { return }
         
@@ -82,6 +85,7 @@ class LoginViewController: CommonViewController {
                 return
             }
             
+            // get google account profile information and idtoken.
             guard
                 let authentication = user?.authentication,
                 let idToken = authentication.idToken,
@@ -91,31 +95,34 @@ class LoginViewController: CommonViewController {
             else {
                 return
             }
-            print(name, email, photoUrl)
+            
+            // create credential
             let credential = GoogleAuthProvider.credential(withIDToken: idToken,
                                                            accessToken: authentication.accessToken)
-            
-
-            
-            
             
             Auth.auth().signIn(with: credential) { userInfo, error in
                 if let error = error {
                     alert(message: error.localizedDescription)
                 }
+                
+                // check whether already exist email or not in firebase
                 DataManager.shared.userExists(with: email) { exist in
                     if !exist {
+                        // if not exist make new Document in firestore collection
                         DataManager.shared.createNewUserDocument(name: name, email: email, photoUrl: photoUrl.absoluteString)
                     }
                 }
                 
+                // save display name
                 AppSettings.displayName = name
             }
         }
     }
     
     
+    /// User can sign-in kakao account
     @IBAction func signInKakao(_ sender: Any) {
+        //
         UserApi.shared.loginWithKakaoAccount {(oauthToken, error) in
             if let error = error {
                 print(error)
@@ -124,22 +131,24 @@ class LoginViewController: CommonViewController {
                 print("loginWithKakaoAccount() success.")
                 
                 if let  _ = oauthToken {
+                    // check token exist or not
                     if (AuthApi.hasToken()) {
                         UserApi.shared.accessTokenInfo { (_, error) in
                             if let error = error {
                                 if let sdkError = error as? SdkError, sdkError.isInvalidTokenError() == true  {
-                                    //로그인 필요
+                                    // need lgoin
                                     self.alert(message: sdkError.localizedDescription)
                                 }
                                 else {
-                                    //기타 에러
+                                    // etc.. error
                                     self.alert(message: "카카오에 로그인 할 수 없습니다.")
                                 }
                             }
                             else {
                                 print("토큰 유효성 체크 성공(필요 시 토큰 갱신됨")
                                 
-                                UserApi.shared.me() {(user, error) in
+                                UserApi.shared.me() {[weak self](user, error) in
+                                    guard let self = self else { return }
                                     if let error = error {
                                         print(error)
                                     }
@@ -153,24 +162,17 @@ class LoginViewController: CommonViewController {
                                         {
                                             AppSettings.displayName = nickName
                                             
-                                            // check wheather exist already kakauseraccount or not.
-                                            DataManager.shared.userExists(with: email) { exist in
-                                                if !exist {
-                                                    Auth.auth().createUser(withEmail: email, password: String(id)) { _, error in
-                                                        if error != nil {
-                                                            print(error?.localizedDescription ?? "")
-                                                         
-                                                            Auth.auth().signIn(withEmail: email, password: String(id), completion:  { _, error in
-                                                                if error == nil {
-                                                                    print("success kakao account login.")
-                                                                }
-                                                                DataManager.shared.createNewUserDocument(name: nickName, email: email, photoUrl: imageUrl.absoluteString)
-                                                                
-                                                            })
-                                                        }
-                                                    }
-                                                }
+                                            // firebase not support kakaotalk athentication, so make should first createUser and then implement sign-in
+                                            Auth.auth().createUser(withEmail: email,
+                                                                   password: String(id))
+                                            { _, _ in
+                                                DataManager.shared.createNewUserDocument(name: nickName, email: email, photoUrl: imageUrl.absoluteString)
                                             }
+                                            
+                                            Auth.auth().signIn(withEmail: email,
+                                                               password: String(id),
+                                                               completion:  {_, _ in })
+                                                
                                         }
                                     }
                                 }
@@ -186,6 +188,7 @@ class LoginViewController: CommonViewController {
     }
     
     
+    /// User can sigin-in fackbook account
     @IBAction func FbSignIn(_ sender: Any) {
         manager.logIn(permissions: ["public_profile", "email"], from: self) { result, error in
             if let error = error {
@@ -200,7 +203,8 @@ class LoginViewController: CommonViewController {
                     if let token = AccessToken.current {
                         let credential = FacebookAuthProvider
                             .credential(withAccessToken: token.tokenString)
-                        Auth.auth().signIn(with: credential) { userInfo, error in
+                        Auth.auth().signIn(with: credential) {[weak self] userInfo, error in
+                            guard let self = self else { return }
                             if let error = error {
                                 self.alert(message: error.localizedDescription)
                             }
@@ -246,6 +250,8 @@ class LoginViewController: CommonViewController {
     }
     
     
+    /// User can sigin-in apple account
+    /// Start Apple's login process by including a delegate that processes Apple's response and nonce's SHA256 hash in your request.
     @IBAction func handleAppleLogin(_ sender: Any) {
         let nonce = randomNonceString()
         currentNonce = nonce
@@ -261,26 +267,14 @@ class LoginViewController: CommonViewController {
     }
 }
 
-
-extension LoginViewController: LoginButtonDelegate {
-    func loginButton(_ loginButton: FBLoginButton, didCompleteWith result: LoginManagerLoginResult?, error: Error?) {
-        if let error = error {
-            alert(message: error.localizedDescription)
-            return
-        }
-        
-    }
-    
-    func loginButtonDidLogOut(_ loginButton: FBLoginButton) {
-        
-    }
-}
-
+/// Implement the ASAuthorizationControllerDelegate to process Apple's responses.
 extension LoginViewController: ASAuthorizationControllerDelegate {
+    /// if occur signin error call this method
     func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
         alert(message: error.localizedDescription)
     }
     
+    ///If you have succeeded in logging in, authenticate to Firebase using an ID token in Apple's response with nonhashed nonce.
     func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
         if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {
             guard let nonce = currentNonce else {
@@ -297,34 +291,21 @@ extension LoginViewController: ASAuthorizationControllerDelegate {
                 return
             }
             
-            if let email = appleIDCredential.email,
-               let name = appleIDCredential.fullName?.givenName {
-                DataManager.shared.createNewUserDocument(name: name, email: email, photoUrl: "")
-                UserDefaults.standard.set(email, forKey: "appleEmail")
-            }
-            
             // Initialize a Firebase credential.
             let credential = OAuthProvider.credential(withProviderID: "apple.com",
                                                       idToken: idTokenString,
                                                       rawNonce: nonce)
             // Sign in with Firebase.
-            Auth.auth().signIn(with: credential) { (authResult, error) in
-                if let error = error  {
+            Auth.auth().signIn(with: credential) {[weak self] (authResult, error) in
+                guard let self = self else { return }
+                if let error = error {
                     self.alert(message: error.localizedDescription)
                     return
                 }
                 
-                // get document data using email from firestore
-                let path = UserDefaults.standard.string(forKey: "appleEmail")
-                DataManager.shared.usersReference.document(path!).getDocument { querySnapshot, error in
-                    if let error = error {
-                        print(error.localizedDescription)
-                    } else {
-                        guard let document = querySnapshot,
-                              let data = document.data(),
-                              let name = data["name"] as? String else { return }
-                        AppSettings.displayName = name
-                    }
+                if let email = appleIDCredential.email,
+                   let name = appleIDCredential.fullName?.givenName {
+                    DataManager.shared.createNewUserDocument(name: name, email: email, photoUrl: "")
                 }
             }
         }
@@ -332,17 +313,17 @@ extension LoginViewController: ASAuthorizationControllerDelegate {
 }
 
 
-
 extension LoginViewController: ASAuthorizationControllerPresentationContextProviding {
+    /// once didtap apple login button make present view
     func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
         return self.view.window!
     }
-    
-    
 }
 
+
 extension LoginViewController {
-    // Adapted from https://auth0.com/docs/api-auth/tutorials/nonce#generate-a-cryptographically-random-nonce
+    ///. Adapted from https://auth0.com/docs/api-auth/tutorials/nonce#generate-a-cryptographically-random-nonce
+    /// Each login request generates an arbitrary string, 'nonce', which is used to verify that an ID token has been explicitly granted in response to the app's authentication request. This step is required to prevent retransmission attacks.
     private func randomNonceString(length: Int = 32) -> String {
         precondition(length > 0)
         let charset: Array<Character> =
@@ -371,11 +352,10 @@ extension LoginViewController {
                 }
             }
         }
-        
         return result
     }
     
-    
+    /// If you send nonce's SHA256 hash with a login request, Apple will forward the original value in response. Firebase hashes the original nonce and compares it with the value delivered by Apple to verify the response.
     @available(iOS 13, *)
     private func sha256(_ input: String) -> String {
         let inputData = Data(input.utf8)

@@ -32,6 +32,22 @@ class SearchViewController: CommonViewController {
     private var messageReference: CollectionReference?
     // Absolutely to get current email
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        updateUserState()
+        
+    }
+    
+    private func updateUserState() {
+         database
+        .collection("users")
+        .document(path).setData(
+            [
+                "signin": true,
+                "noti": true
+            ],
+            merge: true)
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -39,6 +55,7 @@ class SearchViewController: CommonViewController {
         title = "사용자 찾기"
         listTableView.dataSource = self
         listTableView.delegate = self
+        listTableView.separatorStyle = .none
         getUserDataFromFireStore()
         indicator.style = .large
         indicator.startAnimating()
@@ -107,6 +124,12 @@ class SearchViewController: CommonViewController {
 
 
 extension SearchViewController: UITableViewDataSource {
+    
+    /// To make a difference between searching and not searching user list count
+    /// - Parameters:
+    ///   - tableView: listTableView
+    ///   - section: to display user list in section.
+    /// - Returns: user list count
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if isSearching {
             return filteredUserList.count
@@ -116,6 +139,11 @@ extension SearchViewController: UITableViewDataSource {
     }
     
     
+    /// To make a difference between searching and not searching user list.
+    /// - Parameters:
+    ///   - tableView: listTableView
+    ///   - indexPath: indexpath include users
+    /// - Returns: <#description#>
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "SearchTableViewCell", for: indexPath) as! SearchTableViewCell
         if isSearching {
@@ -132,7 +160,7 @@ extension SearchViewController: UITableViewDataSource {
     
     /// save the selected user to the reference. At the same time, save sender information to the recipient.
     /// - Parameters:
-    ///   - tableView: tableView
+    ///   - tableView: listTableView
     ///   - indexPath: indexpath include users
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)

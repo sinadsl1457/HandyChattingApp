@@ -24,6 +24,7 @@ class SearchTableViewCell: UITableViewCell {
         super.awakeFromNib()
         userImageView.layer.cornerRadius = userImageView.frame.width / 2.0
         userImageView.clipsToBounds = true
+        userImageView.contentMode = .scaleAspectFill
     }
     
     
